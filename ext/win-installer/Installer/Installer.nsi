@@ -88,6 +88,7 @@ CRCCheck on
 
 ;Pages (Uninstaller)
 !insertmacro MUI_UNPAGE_WELCOME
+!insertmacro MULTIUSER_UNPAGE_INSTALLMODE
 !insertmacro MUI_UNPAGE_CONFIRM
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_UNPAGE_FINISH
