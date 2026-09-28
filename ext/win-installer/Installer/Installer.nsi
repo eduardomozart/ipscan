@@ -40,17 +40,22 @@ CRCCheck on
 !include LogicLib.nsh
 
 ; MultiUser Setup
-!define MULTIUSER_EXECUTIONLEVEL Highest
-!define MULTIUSER_MUI
-!define MULTIUSER_INSTALLMODE_COMMANDLINE
+!addplugindir "..\NsisMultiUser\Plugins\x86-unicode"
+!addincludedir "..\NsisMultiUser\Include"
+
+!define PRODUCT_NAME "${ApplicationName}"
+!define MULTIUSER_INSTALLMODE_DISPLAYNAME "${ApplicationName}"
 !define MULTIUSER_INSTALLMODE_INSTDIR "${DefaultDirectory}"
 !define MULTIUSER_INSTALLMODE_INSTDIR_REGISTRY_KEY "Software\${ApplicationName}"
 !define MULTIUSER_INSTALLMODE_INSTDIR_REGISTRY_VALUENAME ""
 !define MULTIUSER_INSTALLMODE_DEFAULT_REGISTRY_KEY "Software\${ApplicationName}"
 !define MULTIUSER_INSTALLMODE_DEFAULT_REGISTRY_VALUENAME ""
-!include MultiUser.nsh
+!define MULTIUSER_INSTALLMODE_ALLOW_ELEVATION 1
 
 !include MUI2.nsh
+!include UAC.nsh
+!include NsisMultiUser.nsh
+
 !include x64.nsh
 
 
@@ -89,6 +94,7 @@ CRCCheck on
 ;Languages
 !insertmacro MUI_LANGUAGE "English"
 !insertmacro MUI_LANGUAGE "Italian"
+!insertmacro MULTIUSER_LANGUAGE_INIT
 
 
 ;Macro for verifying admin on Windows 2000/XP
@@ -97,14 +103,6 @@ CRCCheck on
 ;Installer initialization
 Function .onInit
 	!insertmacro MULTIUSER_INIT
-
-	${If} $MultiUser.InstallMode == "AllUsers"
-		${If} ${RunningX64}
-			StrCpy $INSTDIR "$PROGRAMFILES64\${DefaultDirectory}"
-		${Else}
-			StrCpy $INSTDIR "$PROGRAMFILES\${DefaultDirectory}"
-		${EndIf}
-	${EndIf}
 	
 	SectionSetSize ${MAINSECTIONIDX} ${InstallSize}
 FunctionEnd
