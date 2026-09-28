@@ -25,8 +25,6 @@
 Name "${ApplicationName} ${AppVersionFriendly}"
 OutFile "..\${InstallerFileName}-${AppVersionFriendly}-setup.exe"
 InstallDir "$PROGRAMFILES\${DefaultDirectory}"
-InstallDirRegKey HKLM "Software\${ApplicationName}" ""
-RequestExecutionLevel admin
 BrandingText "${FooterText}"
 
 
@@ -40,6 +38,18 @@ CRCCheck on
 
 ;Includes
 !include LogicLib.nsh
+
+; MultiUser Setup
+!define MULTIUSER_EXECUTIONLEVEL Highest
+!define MULTIUSER_MUI
+!define MULTIUSER_INSTALLMODE_COMMANDLINE
+!define MULTIUSER_INSTALLMODE_INSTDIR "${DefaultDirectory}"
+!define MULTIUSER_INSTALLMODE_INSTDIR_REGISTRY_KEY "Software\${ApplicationName}"
+!define MULTIUSER_INSTALLMODE_INSTDIR_REGISTRY_VALUENAME ""
+!define MULTIUSER_INSTALLMODE_DEFAULT_REGISTRY_KEY "Software\${ApplicationName}"
+!define MULTIUSER_INSTALLMODE_DEFAULT_REGISTRY_VALUENAME ""
+!include MultiUser.nsh
+
 !include MUI2.nsh
 !include x64.nsh
 
@@ -63,6 +73,7 @@ CRCCheck on
 
 ;Pages
 !insertmacro MUI_PAGE_WELCOME
+!insertmacro MULTIUSER_PAGE_INSTALLMODE
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
@@ -81,26 +92,18 @@ CRCCheck on
 
 
 ;Macro for verifying admin on Windows 2000/XP
-!macro VerifyUserIsAdmin
-	UserInfo::GetAccountType
-	Pop $0
-	${If} $0 != "admin" ;Require admin rights on NT4+
-		MessageBox MB_ICONSTOP "This installer must be run as an administrator."
-        SetErrorLevel 740 ;ERROR_ELEVATION_REQUIRED
-        Quit
-	${EndIf}
-!macroend
-
+;Removed because MultiUser handles this now
 
 ;Installer initialization
 Function .onInit
-	SetShellVarContext all
-	!insertmacro VerifyUserIsAdmin
-	
-	${If} ${RunningX64}
-		StrCpy $INSTDIR "$PROGRAMFILES64\${DefaultDirectory}"
-	${Else}
-		StrCpy $INSTDIR "$PROGRAMFILES\${DefaultDirectory}"
+	!insertmacro MULTIUSER_INIT
+
+	${If} $MultiUser.InstallMode == "AllUsers"
+		${If} ${RunningX64}
+			StrCpy $INSTDIR "$PROGRAMFILES64\${DefaultDirectory}"
+		${Else}
+			StrCpy $INSTDIR "$PROGRAMFILES\${DefaultDirectory}"
+		${EndIf}
 	${EndIf}
 	
 	SectionSetSize ${MAINSECTIONIDX} ${InstallSize}
@@ -114,7 +117,7 @@ Section Main
 	File /r "..\AppFiles\*"
 
 	;Remember the install location for uninstalls, upgrades and reinstalls
-	WriteRegStr HKLM "Software\${ApplicationName}" "" $INSTDIR
+	WriteRegStr SHCTX "Software\${ApplicationName}" "" $INSTDIR
 
 	;Create uninstaller
 	WriteUninstaller "$INSTDIR\uninstall.exe"
@@ -123,28 +126,27 @@ Section Main
 	CreateShortCut "$SMPROGRAMS\${ApplicationName}.lnk" "$INSTDIR\${ApplicationEXEName}"
 	
 	;Add/remove programs
-	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "DisplayName" "${ApplicationName}"
-	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "UninstallString" "$\"$INSTDIR\uninstall.exe$\""
-	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "QuietUninstallString" "$\"$INSTDIR\uninstall.exe$\" /S"
-	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "InstallLocation" "$\"$INSTDIR$\""
-	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "DisplayIcon" "$\"$INSTDIR\icon.ico$\""
-	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "Publisher" "${ApplicationName}"
-	;WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "HelpLink" "URLHERE"
-	;WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "URLUpdateInfo" "URLHERE"
-	;WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "URLInfoAbout" "URLHERE"
-	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "DisplayVersion" "${AppVersionFriendly}"
-	WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "VersionMajor" ${AppVersionMajor}
-	WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "VersionMinor" ${AppVersionMinor}
-	WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "NoModify" 1
-	WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "NoRepair" 1
-	WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "EstimatedSize" ${InstallSize}
+	WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "DisplayName" "${ApplicationName}"
+	WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "UninstallString" "$\"$INSTDIR\uninstall.exe$\""
+	WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "QuietUninstallString" "$\"$INSTDIR\uninstall.exe$\" /S"
+	WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "InstallLocation" "$\"$INSTDIR$\""
+	WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "DisplayIcon" "$\"$INSTDIR\icon.ico$\""
+	WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "Publisher" "${ApplicationName}"
+	;WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "HelpLink" "URLHERE"
+	;WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "URLUpdateInfo" "URLHERE"
+	;WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "URLInfoAbout" "URLHERE"
+	WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "DisplayVersion" "${AppVersionFriendly}"
+	WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "VersionMajor" ${AppVersionMajor}
+	WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "VersionMinor" ${AppVersionMinor}
+	WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "NoModify" 1
+	WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "NoRepair" 1
+	WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}" "EstimatedSize" ${InstallSize}
 SectionEnd
 
 
 ;Uninstaller initialization
 Function un.onInit
-	SetShellVarContext all
-	!insertmacro VerifyUserIsAdmin
+	!insertmacro MULTIUSER_UNINIT
 FunctionEnd
 
 ;Uninstaller section
@@ -153,7 +155,7 @@ Section "Uninstall"
 	RMDir /r "$INSTDIR"
 	Delete "$SMPROGRAMS\${ApplicationName}.lnk"
 
-	DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}"
-	DeleteRegKey /ifempty HKLM "Software\${ApplicationName}"
+	DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${ApplicationName}"
+	DeleteRegKey /ifempty SHCTX "Software\${ApplicationName}"
 	DeleteRegKey HKCU "Software\JavaSoft\Prefs\${InstallerFileName}"
 SectionEnd
