@@ -24,7 +24,6 @@
 ;General installer details
 Name "${ApplicationName} ${AppVersionFriendly}"
 OutFile "..\${InstallerFileName}-${AppVersionFriendly}-setup.exe"
-InstallDir "$PROGRAMFILES\${DefaultDirectory}"
 BrandingText "${FooterText}"
 
 
@@ -46,6 +45,7 @@ CRCCheck on
 !define PRODUCT_NAME "${ApplicationName}"
 !define VERSION "${AppVersionFriendly}"
 !define PROGEXE "${ApplicationEXEName}"
+!define MULTIUSER_INSTALLMODE_64_BIT 1
 !define MULTIUSER_INSTALLMODE_DISPLAYNAME "${ApplicationName}"
 !define MULTIUSER_INSTALLMODE_INSTDIR "${DefaultDirectory}"
 !define MULTIUSER_INSTALLMODE_INSTDIR_REGISTRY_KEY "Software\${ApplicationName}"
