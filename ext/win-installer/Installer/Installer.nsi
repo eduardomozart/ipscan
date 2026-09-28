@@ -44,6 +44,8 @@ CRCCheck on
 !addincludedir "..\NsisMultiUser\Include"
 
 !define PRODUCT_NAME "${ApplicationName}"
+!define VERSION "${AppVersionFriendly}"
+!define PROGEXE "${ApplicationEXEName}"
 !define MULTIUSER_INSTALLMODE_DISPLAYNAME "${ApplicationName}"
 !define MULTIUSER_INSTALLMODE_INSTDIR "${DefaultDirectory}"
 !define MULTIUSER_INSTALLMODE_INSTDIR_REGISTRY_KEY "Software\${ApplicationName}"
